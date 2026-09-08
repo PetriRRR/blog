@@ -1,0 +1,27 @@
+---
+title: "Mitä volatiliteetti jättää kertomatta sijoitusriskistä?"
+date: "2026-09-01"
+draft: true
+categories:
+  - "Portfolio analytics"
+  - "Risk"
+  - "R"
+---
+
+## Tutkimuskysymys
+
+## Miksi kysymys on sijoittajalle tärkeä?
+
+## Data
+
+## Menetelmä
+
+## Tulokset
+
+## Herkkyystarkastelut
+
+## Rajoitteet
+
+## Johtopäätökset
+
+## Lähteet ja toistettavuus

@@ -1,0 +1,1077 @@
+---
+title: "Fama–French-faktoriaineiston lataaminen R:llä"
+description: "Käytännönläheinen ohje Fama–French-faktoreiden lataamiseen, tarkistamiseen ja valmistelemiseen sijoitusanalyysia varten."
+author: "Petri Rautiainen"
+date: 2026-09-08
+categories:
+  - Faktorisijoittaminen
+  - R
+  - Sijoitusdata
+  - Toistettava analyysi
+draft: false
+toc: true
+code-fold: true
+code-tools: true
+execute:
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 10,
+  fig.height = 6,
+  dpi = 150
+)
+
+required_packages <- c(
+  "frenchdata",
+  "dplyr",
+  "tidyr",
+  "ggplot2",
+  "scales"
+)
+
+missing_packages <- required_packages[
+  !vapply(
+    required_packages,
+    requireNamespace,
+    quietly = TRUE,
+    FUN.VALUE = logical(1)
+  )
+]
+
+if (length(missing_packages) > 0) {
+  stop(
+    paste0(
+      "Seuraavat paketit puuttuvat: ",
+      paste(missing_packages, collapse = ", "),
+      ". Asenna ne ennen renderöintiä komennolla: ",
+      "install.packages(c(",
+      paste0('"', missing_packages, '"', collapse = ", "),
+      "))"
+    )
+  )
+}
+```
+
+## 1. Miksi faktoriaineisto kiinnostaa sijoitusanalyytikkoa?
+
+Sijoituksen toteutunut tuotto ei yksin kerro, millaisten riskien kantamisesta tuotto on syntynyt. Salkku voi esimerkiksi näyttää menestyneen hyvin, vaikka tulos selittyisi suurelta osin yleisellä markkinakehityksellä, pienten yritysten painottamisella tai arvo-osakkeisiin kohdistuneella sijoitustyylillä.
+
+Fama–French-faktoriaineisto tarjoaa standardoidun lähtökohdan tällaisten systemaattisten tuottolähteiden tarkasteluun. Faktoreiden avulla voidaan myöhemmin tutkia esimerkiksi sitä, kuinka paljon rahaston tai sijoitusstrategian tuotoista liittyy markkinariskiin ja kuinka paljon muihin tunnistettuihin sijoitustyyleihin.
+
+Tämän artikkelin tavoitteena ei ole vielä arvioida faktoreiden historiallista kannattavuutta tai rakentaa faktorisijoitusstrategiaa. Ensin tarvitaan luotettava ja toistettava tapa:
+
+1. hakea alkuperäinen faktoriaineisto
+2. tunnistaa oikea taulu ja havaintofrekvenssi
+3. muuntaa päivämäärät ja tuotot analyysiin sopivaan muotoon
+4. validoida lopputulos ennen sen käyttämistä
+5. tarkastella aineiston historiallista käyttäytymistä kuvioiden avulla
+
+Hyvin rakennettu datanlatausprosessi voidaan myöhemmin yhdistää esimerkiksi rahasto-, salkku- tai indeksituottoihin.
+
+## 2. Mitä Fama–French-faktorit kuvaavat?
+
+Kuukausittainen Fama–Frenchin kolmen faktorin aineisto sisältää seuraavat muuttujat:
+
+- **Mkt-RF** kuvaa markkinasalkun tuottoa, josta on vähennetty riskitön korko. Kyse on siis markkinan ylituotosta suhteessa riskittömään korkoon.
+- **SMB**, eli *Small Minus Big*, kuvaa pienten ja suurten yritysten osakkeiden tuottoeroa.
+- **HML**, eli *High Minus Low*, kuvaa korkean ja matalan book-to-market-luvun osakkeiden tuottoeroa. Sitä käytetään tyypillisesti arvo- ja kasvuosakkeiden välisen tuottoeron kuvaamiseen.
+- **RF** kuvaa aineistossa käytettyä riskitöntä korkoa.
+
+Fama–Frenchin viiden faktorin aineistossa ovat lisäksi:
+
+- **RMW**, eli *Robust Minus Weak*, joka liittyy yritysten kannattavuuteen
+- **CMA**, eli *Conservative Minus Aggressive*, joka liittyy yritysten investointikäyttäytymiseen
+
+Tässä artikkelissa käytetään kuukausittaista kolmen faktorin aineistoa. Se muodostaa yksinkertaisen lähtökohdan datan käsittelylle ja myöhemmin toteutettavalle faktorianalyysille.
+
+Faktorit eivät ole tavallisia osakeindeksejä. SMB ja HML ovat laskennallisia long-short-sarjoja, joissa yhden osakeryhmän tuotoista vähennetään toisen osakeryhmän tuotot. Negatiivinen faktorituotto ei siten tarkoita, että kaikki faktoriin liittyvät osakkeet olisivat laskeneet.
+
+## 3. Aineiston lähde
+
+Aineiston virallinen lähde on [Kenneth French Data Library](https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/data_library.html).
+
+Data Librarysta löytyy useita toisistaan poikkeavia faktori- ja portfoliotaulukoita. Aineistoja on saatavilla esimerkiksi:
+
+- kuukausi-, viikko- ja päiväfrekvenssillä
+- kolmen ja viiden faktorin malleille
+- eri markkina-alueille
+- erilaisille valmiiksi muodostetuille portfolioille
+
+Ladattavan tiedoston nimi ei yksin riitä aineiston sisällön varmistamiseen. Ennen analyysia pitää tarkistaa ainakin:
+
+- käytetty markkina-alue
+- havaintofrekvenssi
+- tarkastelujakso
+- tuottojen yksikkö
+- tiedoston sisältämät erilliset taulut
+- faktoreiden määrittely
+- lähdeaineiston dokumentaatio
+
+Tämä on erityisen tärkeää silloin, kun faktoriaineisto yhdistetään ulkopuoliseen tuottosarjaan. Kuukausi- ja päivätuottoja ei voi yhdistää sellaisenaan, ja myös päivämäärien kohdistamisen pitää olla johdonmukaista.
+
+::: {.callout-note}
+## Aineiston tuotantotapa voi muuttua
+
+Kenneth French Data Library kertoo Yhdysvaltain tutkimustuottojen tausta-aineiston käsittelyn muuttuneen CRSP:n siirryttyä uuteen tiedostoformaattiin. Pitkiä historiallisia sarjoja tulkittaessa myös aineiston tuotantotavan muutokset pitää huomioida.
+
+Ajantasaiset kuvaukset löytyvät aina Data Librarysta.
+:::
+
+## 4. Kaksi tapaa ladata aineisto R:ään
+
+Fama–French-aineiston voi hakea R:ään ainakin kahdella tavalla:
+
+1. `frenchdata`-paketin avulla
+2. lataamalla alkuperäisen ZIP-tiedoston suoraan Kenneth French Data Librarysta
+
+`frenchdata`-paketti helpottaa aineistojen löytämistä ja tiedoston sisältämien taulujen käsittelyä. Suora lataus puolestaan antaa enemmän kontrollia siihen, miten alkuperäinen tiedosto luetaan ja muunnetaan.
+
+Kummassakin tapauksessa lopputulos pitää validoida. Erityistä huomiota vaativat:
+
+- kuukausi- ja vuositaulujen erottaminen
+- `YYYYMM`-muotoiset päivämäärät
+- prosenttimuotoiset tuotot
+- mahdolliset otsikko- ja seliterivit
+- puuttuvat tai virheellisesti tulkitut havainnot
+
+Tässä artikkelissa varsinainen analyysiaineisto ladataan `frenchdata`-paketilla. Suora ZIP-lataus esitetään vaihtoehtoisena menetelmänä, mutta sitä ei suoriteta artikkelin renderöinnin yhteydessä.
+
+## 5. Vaihtoehto A: lataaminen frenchdata-paketilla
+
+`frenchdata`-paketti tarjoaa dokumentoidun rajapinnan Kenneth French Data Libraryn aineistoihin.
+
+Paketti voidaan tarvittaessa asentaa seuraavasti:
+
+```r
+install.packages("frenchdata")
+```
+
+Asennuskomentoa ei sisällytetä varsinaiseen analyysiskriptiin. Artikkelin alussa oleva asetuskoodi tarkistaa paketin saatavuuden ja keskeyttää renderöinnin ymmärrettävällä virheilmoituksella, jos paketti puuttuu.
+
+Ladataan Fama–Frenchin kuukausittainen kolmen faktorin aineisto:
+
+```{r}
+#| label: download-factors
+
+factors <- frenchdata::download_french_data(
+  "Fama/French 3 Factors"
+)
+```
+
+Ladattu objekti sisältää erillisiä tauluja eli osajoukkoja. Tarkistetaan niiden nimet:
+
+```{r}
+#| label: inspect-subsets
+
+factors$subsets |>
+  dplyr::select(name)
+```
+
+Kuukausittainen taulu on paketin dokumentoidussa esimerkkirakenteessa ensimmäinen, nimeämätön osajoukko. Vuosittainen taulu on merkitty erikseen.
+
+Valitaan kuukausittainen taulu, mutta tarkistetaan ensin, että osajoukkoja todella löytyy:
+
+```{r}
+#| label: select-monthly-data
+
+if (
+  is.null(factors$subsets) ||
+  nrow(factors$subsets) == 0
+) {
+  stop("Ladattu objekti ei sisältänyt odotettuja osajoukkoja.")
+}
+
+subset_names <- factors$subsets$name
+monthly_index <- which(subset_names == "")[1]
+
+if (
+  length(monthly_index) == 0 ||
+  is.na(monthly_index)
+) {
+  stop("Kuukausittaista faktoriaineistoa ei pystytty tunnistamaan.")
+}
+
+factor_data_raw <- factors$subsets$data[[monthly_index]]
+```
+
+Taulun valinta ei vielä riitä. Seuraavaksi tarkistetaan, vastaako sen rakenne odotuksia.
+
+## 6. Vaihtoehto B: ZIP-tiedoston lataaminen suoraan
+
+Aineiston voi ladata myös suoraan Data Librarysta ZIP-tiedostona.
+
+Seuraava koodi on tarkoitettu vaihtoehtoisen lataustavan havainnollistamiseen. Sitä ei suoriteta tämän artikkelin renderöinnin yhteydessä.
+
+```{r}
+#| label: direct-download
+#| eval: false
+
+zip_url <- paste0(
+  "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/",
+  "F-F_Research_Data_Factors_CSV.zip"
+)
+
+zip_path <- tempfile(fileext = ".zip")
+extract_dir <- tempfile(pattern = "fama_french_")
+
+dir.create(extract_dir)
+
+download.file(
+  url = zip_url,
+  destfile = zip_path,
+  mode = "wb",
+  quiet = TRUE
+)
+
+unzip(
+  zipfile = zip_path,
+  exdir = extract_dir
+)
+
+csv_files <- list.files(
+  path = extract_dir,
+  pattern = "\\.csv$",
+  full.names = TRUE,
+  ignore.case = TRUE
+)
+
+if (length(csv_files) != 1) {
+  stop(
+    paste(
+      "ZIP-tiedostosta odotettiin löytyvän yksi CSV-tiedosto.",
+      "Löydettyjen tiedostojen määrä:",
+      length(csv_files)
+    )
+  )
+}
+
+csv_file <- csv_files[[1]]
+```
+
+CSV-tiedostoa ei kannata lukea olettaen, että koko tiedosto olisi yksi suorakulmainen datataulu. Tiedosto voi sisältää esimerkiksi:
+
+- aineiston kuvaustekstiä
+- kuukausittaisen taulun
+- tyhjiä rivejä
+- vuosittaisen taulun
+- muita selitteitä
+
+Rakennetta voidaan ensin tarkastella riveittäin:
+
+```{r}
+#| label: inspect-direct-file
+#| eval: false
+
+raw_lines <- readLines(
+  con = csv_file,
+  encoding = "UTF-8",
+  warn = FALSE
+)
+
+head(raw_lines, 20)
+tail(raw_lines, 20)
+```
+
+Kuukausittaisen taulun tunnistus kannattaa perustaa rivien sisältöön, ei kiinteisiin rivinumeroihin. Lähdetiedoston rakenne voi muuttua.
+
+Väliaikaiset tiedostot voidaan poistaa käsittelyn jälkeen:
+
+```{r}
+#| label: clean-temporary-files
+#| eval: false
+
+unlink(zip_path)
+unlink(extract_dir, recursive = TRUE)
+```
+
+## 7. Aineiston rakenteen tarkistaminen
+
+Ennen sarakkeiden nimeämistä ja muuntamista varmistetaan, että valittu taulu sisältää odotetun aineiston.
+
+```{r}
+#| label: inspect-raw-data
+
+str(factor_data_raw)
+```
+
+Näytetään vain aineiston ensimmäiset ja viimeiset havainnot:
+
+```{r}
+#| label: preview-raw-data
+
+dplyr::bind_rows(
+  utils::head(factor_data_raw, 6),
+  utils::tail(factor_data_raw, 6)
+)
+```
+
+Tarkistettavia asioita ovat esimerkiksi:
+
+- onko ensimmäinen sarake kuukausi muodossa `YYYYMM`
+- löytyvätkö Mkt-RF-, SMB-, HML- ja RF-sarakkeet
+- ovatko faktorisarakkeet numeerisia
+- sisältääkö taulu vuosihavaintoja kuukausihavaintojen lisäksi
+- onko aineistossa tyhjiä tai selvästi virheellisiä rivejä
+
+Kuukausihavainnon tunnisteen pitäisi sisältää kuusi numeroa. Käytetään tätä yhtenä rakenne-ehtona:
+
+```{r}
+#| label: identify-monthly-rows
+
+date_code <- trimws(
+  as.character(factor_data_raw[[1]])
+)
+
+monthly_rows <- grepl(
+  "^[0-9]{6}$",
+  date_code
+)
+
+factor_data_raw <- factor_data_raw[
+  monthly_rows,
+  ,
+  drop = FALSE
+]
+
+if (nrow(factor_data_raw) == 0) {
+  stop("Aineistosta ei löytynyt YYYYMM-muotoisia kuukausihavaintoja.")
+}
+```
+
+Tämä rajaa aineistoon vain rivit, joiden ensimmäinen kenttä vastaa `YYYYMM`-rakennetta. Rajaus ei kuitenkaan korvaa lähdetiedoston dokumentaation tarkistamista.
+
+## 8. Päivämäärien ja tuottojen muuntaminen
+
+Taulusta pitää löytyä päivämääräkentän lisäksi neljä faktorikenttää.
+
+```{r}
+#| label: validate-column-count
+
+required_column_count <- 5
+
+if (ncol(factor_data_raw) < required_column_count) {
+  stop(
+    paste(
+      "Aineistossa ei ole odotettua määrää sarakkeita.",
+      "Odotettiin vähintään:",
+      required_column_count,
+      "Löydettiin:",
+      ncol(factor_data_raw)
+    )
+  )
+}
+```
+
+Valitaan tarvittavat sarakkeet ja standardoidaan niiden nimet:
+
+```{r}
+#| label: standardize-columns
+
+factor_data <- factor_data_raw[
+  ,
+  seq_len(required_column_count)
+]
+
+names(factor_data) <- c(
+  "date_code",
+  "market_excess",
+  "size",
+  "value",
+  "risk_free"
+)
+```
+
+Faktorisarakkeet muunnetaan numeerisiksi:
+
+```{r}
+#| label: convert-numeric-columns
+
+factor_columns <- c(
+  "market_excess",
+  "size",
+  "value",
+  "risk_free"
+)
+
+factor_data[factor_columns] <- lapply(
+  factor_data[factor_columns],
+  function(x) {
+    as.numeric(trimws(as.character(x)))
+  }
+)
+```
+
+Kenneth French Data Library voi käyttää puuttuvien havaintojen merkintöinä esimerkiksi arvoja `-99.99` ja `-999`. Ne pitää tunnistaa ennen prosenttien muuntamista desimaaleiksi.
+
+```{r}
+#| label: validate-missing-value-codes
+
+missing_value_codes <- c(
+  -99.99,
+  -999
+)
+
+contains_missing_codes <- vapply(
+  factor_data[factor_columns],
+  function(x) {
+    any(
+      x %in% missing_value_codes,
+      na.rm = TRUE
+    )
+  },
+  logical(1)
+)
+
+if (any(contains_missing_codes)) {
+  affected_columns <- names(
+    contains_missing_codes
+  )[contains_missing_codes]
+
+  stop(
+    paste(
+      "Aineistossa havaittiin puuttuvan tiedon tunnuksia sarakkeissa:",
+      paste(affected_columns, collapse = ", ")
+    )
+  )
+}
+```
+
+Muunnetaan `YYYYMM`-koodit R:n `Date`-luokkaan lisäämällä kuukauden ensimmäinen päivä:
+
+```{r}
+#| label: convert-dates
+
+factor_data$date_code <- trimws(
+  as.character(factor_data$date_code)
+)
+
+factor_data$date <- as.Date(
+  paste0(
+    substr(factor_data$date_code, 1, 4),
+    "-",
+    substr(factor_data$date_code, 5, 6),
+    "-01"
+  )
+)
+```
+
+Päivämäärä kuvaa tässä havaintokuukautta. Kuukauden ensimmäisen päivän käyttäminen on tekninen ratkaisu kuukausihavainnon tallentamiseen.
+
+Aineistoa muihin tuottosarjoihin yhdistettäessä pitää käyttää kaikissa aineistoissa samaa kuukausikohdistusta.
+
+Alkuperäiset prosenttimuotoiset tuotot muunnetaan desimaalimuotoon jakamalla ne sadalla:
+
+```{r}
+#| label: convert-returns-to-decimals
+
+factor_data[factor_columns] <- lapply(
+  factor_data[factor_columns],
+  function(x) {
+    x / 100
+  }
+)
+```
+
+Esimerkiksi yhden prosentin tuotto tallentuu tämän jälkeen arvona `0.01`.
+
+Muunnos pitää tehdä täsmälleen kerran. Jo desimaalimuodossa olevan aineiston jakaminen uudelleen sadalla vääristäisi tulokset.
+
+## 9. Datan validointitarkistukset
+
+Ennen aineiston käyttämistä ja tallentamista suoritetaan järjestelmälliset tarkistukset.
+
+### Sarakkeet
+
+```{r}
+#| label: validate-required-columns
+
+required_columns <- c(
+  "date",
+  "market_excess",
+  "size",
+  "value",
+  "risk_free"
+)
+
+missing_columns <- setdiff(
+  required_columns,
+  names(factor_data)
+)
+
+if (length(missing_columns) > 0) {
+  stop(
+    paste(
+      "Aineistosta puuttuvat sarakkeet:",
+      paste(missing_columns, collapse = ", ")
+    )
+  )
+}
+```
+
+### Päivämäärät
+
+```{r}
+#| label: validate-dates
+
+if (anyNA(factor_data$date)) {
+  stop(
+    "Päivämäärissä on puuttuvia tai virheellisiä arvoja."
+  )
+}
+
+if (anyDuplicated(factor_data$date) > 0) {
+  stop(
+    "Päivämäärissä on duplikaatteja."
+  )
+}
+
+if (is.unsorted(factor_data$date, strictly = TRUE)) {
+  stop(
+    "Päivämäärät eivät ole aidosti nousevassa järjestyksessä."
+  )
+}
+```
+
+### Faktorihavainnot
+
+```{r}
+#| label: validate-factor-values
+
+numeric_checks <- vapply(
+  factor_data[factor_columns],
+  is.numeric,
+  logical(1)
+)
+
+if (!all(numeric_checks)) {
+  stop(
+    "Kaikki faktorisarakkeet eivät ole numeerisia."
+  )
+}
+
+if (anyNA(factor_data[factor_columns])) {
+  stop(
+    "Faktorisarakkeissa on puuttuvia arvoja."
+  )
+}
+
+finite_checks <- vapply(
+  factor_data[factor_columns],
+  function(x) {
+    all(is.finite(x))
+  },
+  logical(1)
+)
+
+if (!all(finite_checks)) {
+  stop(
+    "Faktorisarakkeissa on ei-äärellisiä arvoja."
+  )
+}
+```
+
+Tarkistusten tarkoituksena ei ole todistaa, että aineisto olisi taloudellisessa mielessä virheetön. Ne osoittavat, että käsitelty data täyttää myöhempää analyysia varten määritellyt tekniset rakennevaatimukset.
+
+### Validoinnin yhteenveto
+
+```{r}
+#| label: validation-summary
+
+validation_summary <- data.frame(
+  tarkistus = c(
+    "Havaintoja",
+    "Ensimmäinen kuukausi",
+    "Viimeinen kuukausi",
+    "Puuttuvia päivämääriä",
+    "Duplikaattipäivämääriä",
+    "Puuttuvia faktoriarvoja"
+  ),
+  tulos = c(
+    nrow(factor_data),
+    format(min(factor_data$date), "%Y-%m"),
+    format(max(factor_data$date), "%Y-%m"),
+    sum(is.na(factor_data$date)),
+    sum(duplicated(factor_data$date)),
+    sum(is.na(factor_data[factor_columns]))
+  )
+)
+
+knitr::kable(
+  validation_summary,
+  col.names = c(
+    "Tarkistus",
+    "Tulos"
+  )
+)
+```
+
+::: {.callout-warning}
+## Yleisimmät käsittelyvirheet
+
+Fama–French-aineiston käsittelyssä pitää varoa erityisesti seuraavia virheitä:
+
+- prosenttien ja desimaalien sekoittaminen
+- prosenttien jakaminen sadalla useammin kuin kerran
+- kuukausi- ja vuositaulujen yhdistäminen samaan aineistoon
+- `YYYYMM`-koodin tulkitseminen tavalliseksi numeeriseksi muuttujaksi
+- puuttuvien arvojen tunnusten käsitteleminen oikeina tuottoina
+- lähdetiedoston muuttuneen rakenteen käsitteleminen vanhoilla oletuksilla
+
+Lähdetiedoston rakenne ja dokumentaatio pitää tarkistaa aina ennen analyysin suorittamista.
+:::
+
+## 10. Kuukausittaiset faktorituotot
+
+Yksittäisten kuukausien tuottojen kuvaaminen näyttää, kuinka paljon faktorien toteutuneet tuotot vaihtelevat ajan kuluessa.
+
+Markkinan ylituotto, kokofaktori ja arvofaktori esitetään omissa paneeleissaan, koska niiden vaihteluvälit voivat poiketa toisistaan.
+
+```{r}
+#| label: fig-factor-monthly-returns
+#| fig-cap: "Kuukausittaiset markkina-, koko- ja arvotekijöiden tuotot."
+#| fig-alt: "Kolme aikasarjakuviota, jotka esittävät markkinan ylituoton, kokofaktorin ja arvofaktorin kuukausittaiset tuotot."
+#| fig-width: 10
+#| fig-height: 7
+
+factor_labels <- c(
+  market_excess = "Markkinan ylituotto",
+  size = "SMB: pienet miinus suuret",
+  value = "HML: arvo miinus kasvu"
+)
+
+factor_returns_long <- factor_data |>
+  dplyr::select(
+    date,
+    market_excess,
+    size,
+    value
+  ) |>
+  tidyr::pivot_longer(
+    cols = -date,
+    names_to = "factor",
+    values_to = "return"
+  ) |>
+  dplyr::mutate(
+    factor = factor(
+      factor,
+      levels = names(factor_labels),
+      labels = unname(factor_labels)
+    )
+  )
+
+ggplot2::ggplot(
+  factor_returns_long,
+  ggplot2::aes(
+    x = date,
+    y = return
+  )
+) +
+  ggplot2::geom_hline(
+    yintercept = 0,
+    color = "grey70",
+    linewidth = 0.3
+  ) +
+  ggplot2::geom_line(
+    color = "#2C6E9F",
+    linewidth = 0.35
+  ) +
+  ggplot2::facet_wrap(
+    ~ factor,
+    ncol = 1,
+    scales = "free_y"
+  ) +
+  ggplot2::scale_y_continuous(
+    labels = scales::label_percent(
+      accuracy = 1
+    )
+  ) +
+  ggplot2::labs(
+    title = "Fama–French-faktorien kuukausituotot",
+    subtitle = "Yhdysvaltain kuukausittainen kolmen faktorin aineisto",
+    x = NULL,
+    y = "Kuukausituotto",
+    caption = paste(
+      "Lähde: Kenneth French Data Library.",
+      "Oma laskenta."
+    )
+  ) +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(
+    legend.position = "none",
+    strip.text = ggplot2::element_text(
+      face = "bold"
+    )
+  )
+```
+
+Kuvio havainnollistaa, että faktorituotot vaihtelevat kuukausittain ja voivat olla sekä positiivisia että negatiivisia.
+
+Esimerkiksi SMB:n negatiivinen arvo tarkoittaa, että suuret yritykset tuottivat kyseisen kuukauden faktorirakenteessa pieniä yrityksiä paremmin. HML:n negatiivinen arvo puolestaan tarkoittaa, että matalan book-to-market-luvun osakkeet tuottivat korkean book-to-market-luvun osakkeita paremmin.
+
+Kuvio ei kuitenkaan yksin kerro, onko jokin faktori ollut pitkällä aikavälillä sijoittajalle palkitseva.
+
+## 11. Markkinan ja faktorien kumulatiivinen kehitys
+
+Kuukausituottojen perusteella voidaan muodostaa laskennallinen kumulatiivinen indeksi. Jokainen sarja alkaa arvosta 100.
+
+Markkinasarjaa varten alkuperäiseen markkinan ylituottoon lisätään riskitön korko:
+
+```text
+Markkinatuotto = Mkt-RF + RF
+```
+
+SMB:n ja HML:n kumulatiiviset sarjat kuvaavat laskennallista toistuvaa sijoitusta faktorien long-short-rakenteeseen. Ne eivät ole tavallisia osakeindeksejä.
+
+```{r}
+#| label: fig-factor-cumulative
+#| fig-cap: "Markkinan ja Fama–French-faktorien laskennallinen kumulatiivinen kehitys, lähtöarvo 100."
+#| fig-alt: "Aikasarjakuva, jossa markkinan, kokofaktorin ja arvofaktorin kumulatiiviset indeksit alkavat arvosta 100."
+#| fig-width: 10
+#| fig-height: 6
+
+cumulative_data <- factor_data |>
+  dplyr::arrange(date) |>
+  dplyr::transmute(
+    date,
+    Market = cumprod(
+      1 + market_excess + risk_free
+    ) * 100,
+    SMB = cumprod(
+      1 + size
+    ) * 100,
+    HML = cumprod(
+      1 + value
+    ) * 100
+  ) |>
+  tidyr::pivot_longer(
+    cols = -date,
+    names_to = "series",
+    values_to = "index_value"
+  ) |>
+  dplyr::mutate(
+    series = factor(
+      series,
+      levels = c(
+        "Market",
+        "SMB",
+        "HML"
+      ),
+      labels = c(
+        "Markkina",
+        "SMB: pienet miinus suuret",
+        "HML: arvo miinus kasvu"
+      )
+    )
+  )
+
+ggplot2::ggplot(
+  cumulative_data,
+  ggplot2::aes(
+    x = date,
+    y = index_value,
+    color = series
+  )
+) +
+  ggplot2::geom_line(
+    linewidth = 0.65
+  ) +
+  ggplot2::scale_y_log10(
+    labels = scales::label_number(
+      big.mark = " ",
+      decimal.mark = ","
+    )
+  ) +
+  ggplot2::scale_color_manual(
+    values = c(
+      "Markkina" = "#1F4E79",
+      "SMB: pienet miinus suuret" = "#D97904",
+      "HML: arvo miinus kasvu" = "#5B8C5A"
+    )
+  ) +
+  ggplot2::labs(
+    title = "Markkinan ja faktorien kumulatiivinen kehitys",
+    subtitle = paste(
+      "Laskennallinen indeksi,",
+      "lähtöarvo 100 ja logaritminen asteikko"
+    ),
+    x = NULL,
+    y = "Indeksitaso",
+    color = NULL,
+    caption = paste(
+      "Markkina = Mkt-RF + RF.",
+      "SMB ja HML ovat laskennallisia long-short-faktorisarjoja.",
+      "Lähde: Kenneth French Data Library. Oma laskenta."
+    )
+  ) +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(
+    legend.position = "bottom"
+  )
+```
+
+Logaritminen asteikko helpottaa eri ajankohtien suhteellisten muutosten vertailua. Kuvion tarkoitus ei ole osoittaa, että jokin faktori olisi tulevaisuudessa tuottava, vaan havainnollistaa, kuinka tarkastelutapa muuttuu siirryttäessä kuukausihavainnoista pitkän aikavälin kumulatiiviseen sarjaan.
+
+::: {.callout-important}
+## Kumulatiivisen faktorisarjan tulkinta
+
+SMB ja HML ovat long-short-faktoreita. Niiden kumulatiivinen kehitys ei vastaa tavallisen osakesalkun tuottoa.
+
+Kuvio ei myöskään huomioi esimerkiksi kaupankäyntikuluja, veroja, rahoituskustannuksia tai sitä, kuinka helposti faktorisalkku olisi käytännössä toteutettavissa.
+:::
+
+## 12. Liukuvat 12 kuukauden tuotot
+
+Pitkän aikavälin kumulatiivinen kuva voi peittää alleen pitkiä heikkoja ja vahvoja jaksoja.
+
+Seuraava kuvio laskee jokaiselle kuukaudelle edeltävien 12 kuukauden kumulatiivisen tuoton. Laskenta toteutetaan ilman erillistä liukuvan laskennan pakettia.
+
+```{r}
+#| label: fig-factor-rolling-12m
+#| fig-cap: "Markkinan ja Fama–French-faktorien liukuvat 12 kuukauden tuotot."
+#| fig-alt: "Aikasarjakuva markkina-, koko- ja arvofaktorien liukuvista 12 kuukauden tuotoista."
+#| fig-width: 10
+#| fig-height: 7
+
+calculate_rolling_return <- function(returns, window = 12) {
+  result <- rep(
+    NA_real_,
+    length(returns)
+  )
+
+  if (length(returns) < window) {
+    return(result)
+  }
+
+  for (index in seq.int(window, length(returns))) {
+    window_returns <- returns[
+      (index - window + 1):index
+    ]
+
+    result[index] <- prod(
+      1 + window_returns
+    ) - 1
+  }
+
+  result
+}
+
+rolling_data <- factor_data |>
+  dplyr::arrange(date) |>
+  dplyr::transmute(
+    date,
+    market = market_excess + risk_free,
+    size,
+    value
+  ) |>
+  dplyr::mutate(
+    market = calculate_rolling_return(
+      market,
+      window = 12
+    ),
+    size = calculate_rolling_return(
+      size,
+      window = 12
+    ),
+    value = calculate_rolling_return(
+      value,
+      window = 12
+    )
+  ) |>
+  tidyr::pivot_longer(
+    cols = -date,
+    names_to = "factor",
+    values_to = "rolling_return"
+  ) |>
+  dplyr::mutate(
+    factor = factor(
+      factor,
+      levels = c(
+        "market",
+        "size",
+        "value"
+      ),
+      labels = c(
+        "Markkina",
+        "SMB: pienet miinus suuret",
+        "HML: arvo miinus kasvu"
+      )
+    )
+  )
+
+ggplot2::ggplot(
+  rolling_data,
+  ggplot2::aes(
+    x = date,
+    y = rolling_return
+  )
+) +
+  ggplot2::geom_hline(
+    yintercept = 0,
+    color = "grey60",
+    linewidth = 0.3
+  ) +
+  ggplot2::geom_line(
+    color = "#2C6E9F",
+    linewidth = 0.45,
+    na.rm = TRUE
+  ) +
+  ggplot2::facet_wrap(
+    ~ factor,
+    ncol = 1,
+    scales = "free_y"
+  ) +
+  ggplot2::scale_y_continuous(
+    labels = scales::label_percent(
+      accuracy = 1
+    )
+  ) +
+  ggplot2::labs(
+    title = "Liukuvat 12 kuukauden tuotot",
+    subtitle = paste(
+      "Kunkin kuukauden havainto kuvaa",
+      "edeltävän 12 kuukauden kumulatiivista tuottoa"
+    ),
+    x = NULL,
+    y = "12 kuukauden tuotto",
+    caption = paste(
+      "Lähde: Kenneth French Data Library.",
+      "Oma laskenta."
+    )
+  ) +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(
+    strip.text = ggplot2::element_text(
+      face = "bold"
+    )
+  )
+```
+
+Liukuva tarkastelu tuo esiin sen, että faktorien toteutuneet tuotot voivat vaihdella merkittävästi eri ajanjaksoina.
+
+Historiallinen vaihtelu ei kuitenkaan vielä kerro, johtuuko havaittu tulos pysyvästä riskipreemiosta, arvostustasojen muutoksesta, suhdanteesta, satunnaisvaihtelusta tai aineiston muodostamistavasta.
+
+## 13. Valmis aineisto myöhempää analyysia varten
+
+Validointien jälkeen aineistosta valitaan vain yhdenmukaisesti nimetyt sarakkeet.
+
+```{r}
+#| label: create-processed-data
+
+processed_data <- factor_data |>
+  dplyr::select(
+    date,
+    market_excess,
+    size,
+    value,
+    risk_free
+  )
+```
+
+Käsitelty aineisto voidaan tallentaa artikkelin omaan `data/processed`-kansioon.
+
+Polku muodostetaan nykyisen artikkelin hakemistosta. Quarto suorittaa artikkelin koodilohkot oletusarvoisesti dokumentin sijaintiin suhteutetussa ympäristössä, ellei projektin asetuksissa ole määritelty muuta työskentelyhakemistoa.
+
+```{r}
+#| label: save-processed-data
+
+output_dir <- file.path(
+  "data",
+  "processed"
+)
+
+if (!dir.exists(output_dir)) {
+  dir.create(
+    output_dir,
+    recursive = TRUE
+  )
+}
+
+output_file <- file.path(
+  output_dir,
+  "fama_french_3_monthly.csv"
+)
+
+utils::write.csv(
+  processed_data,
+  file = output_file,
+  row.names = FALSE,
+  fileEncoding = "UTF-8"
+)
+```
+
+Tallennettu tiedosto sisältää:
+
+- yhdenmukaisesti nimetyt sarakkeet
+- `Date`-muotoiset päivämäärät
+- desimaalimuotoiset tuotot
+- vain kuukausittaiset havainnot
+- validointisäännöt läpäisseen aineiston
+
+Tulostiedostoa ei tarvitse välttämättä tallentaa julkiseen GitHub-repositoryyn. Sen sijaan repositoryssa voidaan säilyttää aineiston muodostava R-koodi ja dokumentaatio.
+
+## 14. Rajoitteet ja toistettavuus
+
+Automaattinen latausskripti vähentää manuaalista työtä, mutta se ei poista lähdeaineiston tuntemisen tarvetta.
+
+Kenneth French Data Library voi sisältää aineistokohtaisia huomautuksia, määritelmiä ja rakenteita, joita yleinen käsittelyskripti ei pysty päättelemään. Myös lähdeaineiston tuotantotapa ja historialliset havainnot voivat muuttua tietokantakorjausten yhteydessä.
+
+`frenchdata`-paketti muodostaa lisäksi riippuvuuden analyysin ja ulkoisen R-paketin välille. Paketin toiminta tai latauksen kohteena olevan tiedoston rakenne voi muuttua.
+
+Analyysissä kannattaa dokumentoida ainakin:
+
+- R-versio
+- käytetyt paketit ja niiden versiot
+- datan hakupäivä
+- lähdeosoite
+- aineiston nimi
+- käytetty markkina-alue
+- käytetty havaintofrekvenssi
+- alkuperäinen ja lopullinen yksikkö
+- kaikki aineistoon tehdyt muunnokset
+- käytetyt validointisäännöt
+
+Toistettavuus ei tarkoita vain sitä, että koodi voidaan suorittaa uudelleen. Toisen analyytikon pitäisi myös pystyä ymmärtämään, mitä aineistoa käytettiin, miten se muunnettiin ja millä tarkistuksilla lopputulos hyväksyttiin.
+
+### Käytetty R-ympäristö
+
+```{r}
+#| label: session-information
+
+sessionInfo()
+```
+
+## 15. Mitä seuraavaksi?
+
+Kun faktoriaineiston lataus ja validointi toimivat, seuraava vaihe on yhdistää kuukausittaiset faktorit analysoitavan sijoituksen, rahaston tai indeksin kuukausituottoihin.
+
+Tällöin pitää ratkaista ainakin seuraavat kysymykset:
+
+- käytetäänkö sijoituksesta kokonaistuottoa vai hintatuottoa
+- ovatko sijoituksen ja faktoreiden tuotot samassa valuutassa
+- vastaavatko havaintokuukaudet toisiaan
+- vähennetäänkö sijoituksen tuotosta aineiston riskitön korko
+- miten puuttuvat kuukaudet käsitellään
+- mikä tarkastelujakso on analyysin kannalta perusteltu
+- käytetäänkö kolmen vai viiden faktorin mallia
+
+Vasta näiden tarkistusten jälkeen voidaan siirtyä esimerkiksi faktoriregressioon ja arvioida, millaisia herkkyyksiä analysoitavalla tuottosarjalla on markkina-, koko- ja arvotekijöihin.
+
+## Lähteet
+
+- [Kenneth French Data Library](https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/data_library.html)
+- [CRAN: frenchdata-paketin käyttöohje](https://cran.r-project.org/web/packages/frenchdata/vignettes/basic_usage.html)
+
+::: {.callout-note}
+## Huomautus
+
+Kirjoitus sisältää tekijän omaa analyysia ja menetelmäkuvausta. Se ei edusta työnantajan näkemyksiä eikä ole sijoitussuositus.
+:::

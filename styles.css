@@ -1,0 +1,20 @@
+body {
+  font-family: "Segoe UI", sans-serif;
+  line-height: 1.6;
+}
+
+.navbar {
+  border-bottom: 1px solid #e9ecef;
+}
+
+h1, h2, h3 {
+  color: #2c3e50;
+}
+
+.listing-item {
+  margin-bottom: 1.5rem;
+}
+
+.listing-categories {
+  margin-top: 0.5rem;
+}

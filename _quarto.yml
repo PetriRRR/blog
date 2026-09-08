@@ -1,0 +1,87 @@
+project:
+  type: website
+  output-dir: _site
+
+website:
+  title: "Petri Rautiainen"
+  description: "Investment analytics, data and reproducible research"
+
+  navbar:
+    background: primary
+    search: true
+    left:
+      - text: "Etusivu"
+        href: index.qmd
+      - text: "Analyysit"
+        href: factor-investing/index.qmd
+      - text: "Projektit"
+        href: projects.qmd
+      - text: "Minusta"
+        href: about.qmd
+
+  sidebar:
+    style: docked
+    search: true
+    collapse-level: 1
+    contents:
+      - text: "Etusivu"
+        href: index.qmd
+
+      - section: "Faktorisijoittaminen"
+        href: factor-investing/index.qmd
+        contents:
+          - text: "Johdanto faktoreihin"
+            href: factor-investing/introduction.qmd
+          - text: "Fama–French-datan lataaminen"
+            href: factor-investing/download-data.qmd
+          - text: "Faktorituottojen historia"
+            href: factor-investing/historical-returns.qmd
+          - text: "Faktoriregressio"
+            href: factor-investing/regression.qmd
+
+      - section: "Salkkuanalyysi"
+        href: portfolio-analytics/index.qmd
+        contents:
+          - text: "Tuotto ja riski"
+            href: portfolio-analytics/return-and-risk.qmd
+          - text: "Drawdown"
+            href: portfolio-analytics/drawdown.qmd
+
+      - section: "Korkosijoitukset"
+        href: fixed-income/index.qmd
+        contents:
+          - text: "Tuottolähteet"
+            href: fixed-income/return-sources.qmd
+          - text: "Duration"
+            href: fixed-income/duration.qmd
+
+      - section: "Sijoitusdata"
+        href: investment-data/index.qmd
+        contents:
+          - text: "Datan laadunvarmistus"
+            href: investment-data/data-quality.qmd
+
+      - text: "Minusta"
+        href: about.qmd
+
+  page-navigation: true
+
+  page-footer:
+    left: "© Petri Rautiainen"
+    right: "Built with Quarto"
+
+format:
+  html:
+    theme:
+      light: cosmo
+      dark: darkly
+    css: styles.css
+    toc: true
+    toc-depth: 3
+    code-fold: true
+    code-tools: true
+
+execute:
+  freeze: auto
+  warning: false
+  message: false

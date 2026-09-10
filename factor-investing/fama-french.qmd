@@ -1,0 +1,28 @@
+
+title: "What Are Fama-French Factors?"
+
+
+# What Are Fama-French Factors?
+
+The Fama-French model extends the Capital Asset Pricing Model (CAPM) by introducing additional risk factors that explain stock returns.
+
+## The Original Three-Factor Model
+
+The model contains:
+
+- Market Risk Premium (MKT-RF)
+- Small Minus Big (SMB)
+- High Minus Low (HML)
+
+## Why It Matters
+
+Empirical evidence suggests that company size and valuation characteristics explain part of stock returns beyond market beta alone.
+
+## Next Steps
+
+Future tutorials will show:
+
+1. Downloading factor data
+2. Cleaning datasets
+3. Running factor regressions in R
+4. Visualizing factor exposures

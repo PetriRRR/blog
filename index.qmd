@@ -1,10 +1,74 @@
 ---
-title: "Analysis"
-listing:
-  contents: posts
-  sort: "date desc"
-  type: default
-  categories: true
-  sort-ui: false
-  filter-ui: false
+title: "Investment Analytics, Data & Reproducible Research"
+page-layout: full
 ---
+
+# Investment Analytics, Data & Reproducible Research
+
+Welcome.
+
+This website explores investment analytics, financial data, portfolio construction and empirical asset pricing through reproducible research.
+
+## Research Framework
+
+Content is organized into four categories.
+
+### Concept
+
+Theoretical foundations and financial intuition.
+
+Examples:
+
+- CAPM
+- Fama-French Factors
+- Duration
+- Portfolio Attribution
+
+### Tutorial
+
+Practical implementation guides.
+
+Examples:
+
+- Downloading financial data
+- Data cleaning in R
+- Factor regressions
+- Performance analytics
+
+### Research
+
+Methodological discussions and empirical approaches.
+
+Examples:
+
+- Rolling regressions
+- Risk decomposition
+- Factor exposure estimation
+
+### Case Study
+
+Applications using real-world datasets.
+
+Examples:
+
+- Nordic ETFs
+- Multi-asset portfolios
+- Asset allocation analytics
+
+## Topics
+
+### Investment Data
+
+Data acquisition, validation and reporting workflows.
+
+### Portfolio Analytics
+
+Performance measurement, benchmarking and attribution.
+
+### Fixed Income
+
+Yield curves, duration and credit risk.
+
+### Asset Pricing
+
+Factor investing, CAPM and empirical finance.

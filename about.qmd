@@ -1,41 +1,45 @@
----
-title: "About me"
----
 
-## 1. Lyhyt esittely
+title: "About"
 
-Olen Petri Rautiainen, sijoitusalan data-analyytikko. Olen kiinnostunut siitä, miten sijoitusdataa voidaan käyttää ymmärrettävästi, systemaattisesti ja toistettavasti. Sivustolla kirjoitan sijoitusanalytiikasta, markkinadatasta, salkkuanalyysistä, korkosijoituksista, faktorisijoittamisesta, riskimittareista, ESG-datan mittaamisesta ja toistettavista analyysiprosesseista. Tavoitteenani on yhdistää substanssi, data-analytiikka ja selkeä kirjoittaminen.
 
-## 2. Mitä teen
+# About
 
-Työskentelyni keskittyy sijoitusalan datapohjaiseen analyysiin ja raportointiin. Käytän työssäni ja omissa analyyseissäni erityisesti Power BI:tä, DAXia, R:ää, Pythonia ja Exceliä. Näiden työkalujen avulla rakennan analyysiprosesseja, jotka auttavat tarkastelemaan tulojen rakennetta, riskiä, aineistoja ja käytettävyyttä tavalla, joka on sekä käytännönläheinen että toistettavissa.
+My name is Petri Rautiainen.
 
-Asioiden tarkastelu perustuu usein julkisesti saatavilla olevaan tai muuten julkaisukelpoiseen dataan. Pyrin siihen, että analyysit ovat sekä teknisesti kunnollisia että ymmärrettäviä lukijalle, joka ei välttämättä työskentele päivittäin sijoitusanalytiikan parissa. Minulle tärkeää on, että data käytetään ymmärrettävästi eikä vain teknisesti näyttävästi.
+I work in investment analytics, data management and reporting.
 
-## 3. Mitä tällä sivustolla julkaistaan
+My professional interests include:
 
-Tämän sivuston tarkoitus on yhdistää sijoitusalan substanssi, data-analytiikka ja ymmärrettävä kirjoittaminen. Julkaisen kirjoituksia, jotka käsittelevät sijoitusdataa, riskin tarkastelua, sijoitusanalytiikkaa sekä aineistojen ja menetelmien käytännön ongelmia. Pyrin kirjoittamaan asioista niin, että lukija voi seurata ajattelua ja päätöksentekoa ilman, että täytyy tuntea jokaista työkalua tai käytäntöä etukäteen.
+- Investment data engineering
+- Portfolio analytics
+- Risk management
+- Power BI
+- Reproducible research
+- Empirical asset pricing
 
-Sivuston sisältö perustuu käytännön analyysiin, ei kaupallisiin tai työnantajan sisäisiin näkemyksiin. Tämä tarkoittaa, että sisällön lähtökohtana on läpinäkyvyys, validointi ja aineiston huolellinen käsittely.
+This website serves as a collection of concepts, tutorials, research notes and case studies related to investment analytics.
 
-## 4. Työkalut ja menetelmät
+## Background
 
-Työssäni käytän laajasti Power BI:tä, DAXia, R:ää, Pythonia ja Exceliä. Näiden välineiden ansiosta voin yhdistää datan hankinnan, muokkaamisen, validoinnin ja visualisoinnin yhtenäiseksi prosessiksi. Sijoitusanalytiikassa erityisesti toistettavat työkalut ja selkeät käsittelylogiikat ovat keskeisiä, koska virheet data- tai laskentaprosessissa voivat johtaa huonoon johtopäätökseen.
+My experience covers:
 
-Kiinnostuksen kohteitani ovat salkkuanalyysi, korkosijoitukset, faktorisijoittaminen, riskimittarit, ESG-datan mittaaminen ja toistettavat analyysiprosessit. Näiden aiheiden tarkastelu on tarpeen, koska sijoituspäätösten ymmärtäminen vaatii sekä taloudellista että kvantitatiivista näkökulmaa.
+- Investment analytics
+- ESG analytics
+- Real estate fund analysis
+- Data analytics and reporting
+- Financial research
 
-## 5. Aiempi kirjoittajatausta
+## Tools
 
-Ennen sijoitusanalytiikan työtä minulla oli aiempi tausta journalistina ja kirjoittajana. Tuolloin kirjoitin muun muassa taloudesta, yhteiskunnasta, kulttuurista ja musiikista. Tämä tausta on ollut tärkeä myös tänä päivänä: se on kehittänyt kykyäni yhdistää analyyttistä tarkkuutta selkeään ja helposti lähestyttävään kirjoitustyyliin.
+Topics on this website are implemented using tools such as:
 
-Aiempi kirjoittajakokemukseni on myös vaikuttanut siihen, miten näen analyysin tarkoituksen. Tieto ei saa jäädä vain tekniseksi tuotokseksi; sen tulee olla ymmärrettävää, yhteydessä todelliseen päätöksentekoon ja toimiva lukijan näkökulmasta.
+- R
+- Quarto
+- Power BI
+- Python
+- GitHub Pages
 
-## 6. Sisältöä koskeva rajaus
+## Contact
 
-Tämän sivuston sisältö on henkilökohtaista, eikä se edusta työnantajan näkemyksiä. Sivustolla ei julkaista työnantajan sisäisiä tietoja, sijoituspositioita, lisensoitua aineistoa tai luottamuksellista materiaalia. Julkaistut analyysit perustuvat julkiseen tai muuten julkaisukelpoiseen dataan, ja kirjoitukset ovat aina henkilökohtaisia näkemyksiä, eivät sijoitussuosituksia.
-
-Sivuston tavoite ei ole korvata ammatti- tai sijoitusneuvontaa, vaan tarjota analyyttista ja helposti lähestyttävää näkökulmaa sijoitusdatasta, riskeistä ja toistettavasta analyysistä. Sisältö on tarkoitettu tiedon jakamiseen, ei henkilökohtaiseen sijoitusohjaukseen.
-
-::: {.callout-note}
-Kirjoitukset ovat tekijän omia, eivät edusta työnantajan näkemyksiä eivätkä ole sijoitussuosituksia.
-:::
+LinkedIn and GitHub links will be added here.
+`

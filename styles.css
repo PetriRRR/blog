@@ -1,20 +1,190 @@
+/* ---------- Fonts ---------- */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 body {
-  font-family: "Segoe UI", sans-serif;
-  line-height: 1.6;
+  font-family: "Inter", sans-serif;
+  font-size: 18px;
+  line-height: 1.75;
+  color: #202124;
 }
 
+
+/* ---------- Main content width ---------- */
+
+.page-columns {
+  max-width: 1400px;
+}
+
+
+/* ---------- Headings ---------- */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Inter", sans-serif;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+h1 {
+  font-size: 2.8rem;
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+h2 {
+  font-size: 2rem;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+h3 {
+  font-size: 1.4rem;
+  margin-top: 2rem;
+}
+
+
+/* ---------- Paragraphs ---------- */
+
+p {
+  margin-bottom: 1.2rem;
+}
+
+
+/* ---------- Links ---------- */
+
+a {
+  color: #0d6efd;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+
+/* ---------- Navbar ---------- */
+
 .navbar {
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.navbar-brand {
+  font-weight: 700;
+}
+
+
+/* ---------- Hero title ---------- */
+
+.quarto-title-banner {
+  background-color: #f8f9fa;
   border-bottom: 1px solid #e9ecef;
 }
 
-h1, h2, h3 {
-  color: #2c3e50;
+.quarto-title .title {
+  font-weight: 800;
 }
 
-.listing-item {
-  margin-bottom: 1.5rem;
+
+/* ---------- Sidebar ---------- */
+
+.sidebar-navigation {
+  font-size: 0.95rem;
 }
 
-.listing-categories {
-  margin-top: 0.5rem;
+.sidebar-navigation .section-title {
+  font-weight: 700;
+}
+
+.sidebar-item-text {
+  line-height: 1.5;
+}
+
+
+/* ---------- TOC ---------- */
+
+#toc-title {
+  font-weight: 700;
+}
+
+.sidebar.toc-left,
+.sidebar.toc-right {
+  font-size: 0.9rem;
+}
+
+
+/* ---------- Code blocks ---------- */
+
+pre {
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+code {
+  font-size: 0.9rem;
+}
+
+
+/* ---------- Tables ---------- */
+
+table {
+  font-size: 0.95rem;
+}
+
+th {
+  font-weight: 600;
+}
+
+
+/* ---------- Images ---------- */
+
+img {
+  border-radius: 6px;
+}
+
+
+/* ---------- Blockquotes ---------- */
+
+blockquote {
+  border-left: 4px solid #0d6efd;
+  padding-left: 1rem;
+  color: #555;
+}
+
+
+/* ---------- Footer ---------- */
+
+.nav-footer {
+  border-top: 1px solid #e9ecef;
+  margin-top: 4rem;
+  font-size: 0.9rem;
+}
+
+
+/* ---------- Research cards ---------- */
+
+.card {
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+
+/* ---------- Wide screens ---------- */
+
+@media (min-width: 1400px) {
+
+  .content {
+    max-width: 1000px;
+  }
+
 }

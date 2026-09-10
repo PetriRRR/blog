@@ -1,5 +1,23 @@
 ---
-title: "Projektit"
+title: "Research Library"
 ---
 
-Sisältöä valmistellaan.
+# Research Library
+
+The website follows a consistent research structure.
+
+## Concepts
+
+Theory and intuition.
+
+## Tutorials
+
+Step-by-step implementation.
+
+## Research
+
+Methods and empirical analysis.
+
+## Case Studies
+
+Real-world examples using financial datasets.

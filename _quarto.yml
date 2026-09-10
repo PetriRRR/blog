@@ -4,64 +4,69 @@ project:
 
 website:
   title: "Petri Rautiainen"
-  description: "Investment analytics, data and reproducible research"
+  description: "Investment Analytics, Data & Reproducible Research"
 
   navbar:
-    background: primary
+    background: light
     search: true
     left:
-      - text: "Etusivu"
+      - text: "Home"
         href: index.qmd
-      - text: "Analyysit"
-        href: factor-investing/index.qmd
-      - text: "Projektit"
+
+      - text: "Research Library"
         href: projects.qmd
-      - text: "Minusta"
+
+      - text: "About"
         href: about.qmd
 
   sidebar:
     style: docked
     search: true
-    collapse-level: 1
+    collapse-level: 2
+
     contents:
-      - text: "Etusivu"
+
+      - text: "Home"
         href: index.qmd
 
-      - section: "Faktorisijoittaminen"
-        href: factor-investing/index.qmd
+      - section: "Investment Data"
+        href: investment-data/index.qmd
         contents:
-          - text: "Johdanto faktoreihin"
-            href: factor-investing/introduction.qmd
-          - text: "Fama–French-datan lataaminen"
-            href: factor-investing/download-data.qmd
-          - text: "Faktorituottojen historia"
-            href: factor-investing/historical-returns.qmd
-          - text: "Faktoriregressio"
-            href: factor-investing/regression.qmd
+          - text: "Concepts"
+            href: investment-data/data-quality.qmd
 
-      - section: "Salkkuanalyysi"
+      - section: "Portfolio Analytics"
         href: portfolio-analytics/index.qmd
         contents:
-          - text: "Tuotto ja riski"
+          - text: "Return and Risk"
             href: portfolio-analytics/return-and-risk.qmd
           - text: "Drawdown"
             href: portfolio-analytics/drawdown.qmd
 
-      - section: "Korkosijoitukset"
+      - section: "Fixed Income"
         href: fixed-income/index.qmd
         contents:
-          - text: "Tuottolähteet"
+          - text: "Sources of Return"
             href: fixed-income/return-sources.qmd
           - text: "Duration"
             href: fixed-income/duration.qmd
 
-      - section: "Sijoitusdata"
-        href: investment-data/index.qmd
+      - section: "Asset Pricing"
+        href: factor-investing/index.qmd
         contents:
-          - text: "Datan laadunvarmistus"
-            href: investment-data/data-quality.qmd
+          - text: "Concept: Factor Investing"
+            href: factor-investing/introduction.qmd
+          - text: "Tutorial: Download Fama-French Data"
+            href: factor-investing/download-data.qmd
+          - text: "Research: Historical Factor Returns"
+            href: factor-investing/historical-returns.qmd
+          - text: "Case Study: Factor Regression"
+            href: factor-investing/regression.qmd
 
-      - text: "Minusta"
+      - text: "Research Library"
+        href: projects.qmd
+
+      - text: "About"
         href: about.qmd
 
   page-navigation: true
@@ -73,11 +78,14 @@ website:
 format:
   html:
     theme:
-      light: cosmo
+      light: litera
       dark: darkly
+
     css: styles.css
+
     toc: true
     toc-depth: 3
+
     code-fold: true
     code-tools: true
 

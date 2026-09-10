@@ -1,4 +1,4 @@
----
+
 title: "Fama–French-faktoriaineiston lataaminen R:llä"
 description: "Käytännönläheinen ohje Fama–French-faktoreiden lataamiseen, tarkistamiseen ja valmistelemiseen sijoitusanalyysia varten."
 author: "Petri Rautiainen"
@@ -15,7 +15,7 @@ code-tools: true
 execute:
   warning: false
   message: false
----
+
 
 ```{r}
 #| label: setup
